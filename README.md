@@ -722,8 +722,6 @@ The values are stored as strings but all the functions below can take either a s
 * `removeconfigstring`
 * `replaceconfigstring`
 * `getcurrentthread`
-* `printcallstack`
-* `getcallstack`
 * `getfunctionargcount`
 * `arrayremovekey`
 * `xor`

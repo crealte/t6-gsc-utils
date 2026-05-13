@@ -165,23 +165,6 @@ namespace debug
             return "unknown";
         }
 
-        void print_error(const char* msg, ...)
-        {
-            char buffer[2048];
-
-            va_list ap;
-            va_start(ap, msg);
-
-            vsnprintf_s(buffer, sizeof(buffer), _TRUNCATE, msg, ap);
-
-            va_end(ap);
-
-            printf("******* script runtime error *******\n");
-            printf("%s\n", buffer);
-            printf(debug::get_call_stack().data());
-            printf("************************************\n");
-        }
-
         utils::hook::detour alloc_child_variable_hook;
         const char* allocations[0x10000];
 
@@ -280,39 +263,6 @@ namespace debug
         }
     }
 
-    std::string get_call_stack(bool print_local_vars)
-    {
-        std::string info{};
-        const auto line = [&info](const std::string& text)
-        {
-            info.append(text);
-            info.append("\r\n");
-        };
-
-        for (auto frame = game::scr_VmPub->function_frame; frame != game::scr_VmPub->function_frame_start; --frame)
-        {
-            const auto function = scripting::find_function_pair(frame->fs.pos);
-
-            if (function.has_value())
-            {
-                const auto& value = function.value();
-                line(utils::string::va("\tat function \"%s\" in file \"%s.gsc\"", value.second.data(), value.first.data()));
-            }
-            else
-            {
-                line(utils::string::va("\tat unknown location (%p)", frame->fs.pos));
-            }
-
-            const scripting::object local_vars{frame->fs.localId};
-            if (local_vars.get_keys().size() && print_local_vars)
-            {
-                line(utils::string::va("\t\tlocal vars: %s", json::gsc_to_string(local_vars).data()));
-            }
-        }
-
-        return info;
-    }
-
     std::string get_child_var_allocations(int limit)
     {
         std::string info{};
@@ -402,23 +352,6 @@ namespace debug
                 *reinterpret_cast<int*>(0) = 1;
             });
 
-            gsc::function::add("breakpoint", [](const scripting::variadic_args& args)
-            {
-                if (!developer_script->current.enabled)
-                {
-                    return;
-                }
-
-                std::string msg;
-                if (args.size() >= 1)
-                {
-                    msg = args[0].to_string();
-                }
-
-                const auto text = utils::string::va("%s\n %s", msg.data(), get_call_stack().data());
-                MessageBoxA(nullptr, text, "GSC Breakpoint", MB_ICONERROR);
-            });
-
             gsc::function::add("assert", [](const bool assertion)
             {
                 if (!developer_script->current.enabled)
@@ -440,17 +373,6 @@ namespace debug
                 }
                 
                 throw std::runtime_error(msg);
-            });
-
-            gsc::function::add("throw", [](const std::string& msg)
-            {
-                if (!developer_script->current.enabled)
-                {
-                    return;
-                }
-                
-                print_error("exception thrown: %s", msg.data());
-                kill_current_thread();
             });
 
             gsc::function::add("killthread", [](const scripting::function& function, const scripting::variadic_args& args)
@@ -578,20 +500,6 @@ namespace debug
                 });
             }
 
-            gsc::function::add("printcallstack", []
-            {
-                if (!developer_script->current.enabled)
-                {
-                    return;
-                }
-
-                printf(debug::get_call_stack().data());
-            });
-
-            gsc::function::add("getcallstack", []
-            {
-                return debug::get_call_stack();
-            });
         }
     };
 }

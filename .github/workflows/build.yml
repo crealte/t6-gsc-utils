@@ -10,6 +10,11 @@ on:
     branches:
       - "*"
   workflow_dispatch: # Allows you to click "Run Workflow" manually
+    inputs:
+      release_description:
+        description: 'Release Title/Description'
+        required: false
+        default: 'Workflow Dispatch'
 
 permissions:
   contents: write # Essential permission to create Releases
@@ -58,7 +63,10 @@ jobs:
           files: |
             Release-binaries/t6-gsc-utils.dll
             Debug-binaries/t6-gsc-utils.dll
-          tag_name: ${{ github.ref_name }}
-          name: Build ${{ github.ref_name }}
+          tag_name: ${{ github.event_name == 'workflow_dispatch' && format('{0}-run-{1}', github.ref_name, github.run_number) || github.ref_name }}
+          name: >
+            ${{ github.event_name == 'workflow_dispatch' 
+                && format('{0} (Run {1})', github.event.inputs.release_description, github.run_number) 
+                || format('Build {0}', github.ref_name) }}
           draft: false
           prerelease: false

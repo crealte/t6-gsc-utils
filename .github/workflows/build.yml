@@ -1,15 +1,7 @@
 name: Build and Release
 
 on:
-  push:
-    branches:
-      - "*"
-    tags:
-      - "v*" # Triggers a formal release when you push a tag like v1.0
-  pull_request:
-    branches:
-      - "*"
-  workflow_dispatch: # Allows you to click "Run Workflow" manually
+  workflow_dispatch:
     inputs:
       release_description:
         description: 'Release Title/Description'
@@ -17,7 +9,7 @@ on:
         default: 'Workflow Dispatch'
 
 permissions:
-  contents: write # Essential permission to create Releases
+  contents: write
 
 jobs:
   build:
